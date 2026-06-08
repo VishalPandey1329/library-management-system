@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Library Management System</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f5f4f0;
+      --bg-tertiary: #eeecea;
+      --text-primary: #1a1a18;
+      --text-secondary: #6b6a65;
+      --border: rgba(0,0,0,0.1);
+      --border-strong: rgba(0,0,0,0.18);
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --accent: #2C2C2A;
+      --accent-text: #FAC775;
+      --green-bg: #EAF3DE;
+      --green-text: #3B6D11;
+      --amber-bg: #FAEEDA;
+      --amber-text: #854F0B;
+      --red-bg: #FCEBEB;
+      --red-text: #A32D2D;
+      --info-bg: #E6F1FB;
+      --info-text: #185FA5;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #1e1e1c;
+        --bg-secondary: #282826;
+        --bg-tertiary: #111110;
+        --text-primary: #f0ede8;
+        --text-secondary: #9a9891;
+        --border: rgba(255,255,255,0.1);
+        --border-strong: rgba(255,255,255,0.18);
+        --accent: #FAC775;
+        --accent-text: #2C2C2A;
+        --green-bg: #173404;
+        --green-text: #C0DD97;
+        --amber-bg: #412402;
+        --amber-text: #FAC775;
+        --red-bg: #501313;
+        --red-text: #F7C1C1;
+        --info-bg: #042C53;
+        --info-text: #B5D4F4;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* TOP NAV */
+    .navbar {
+      background: var(--accent);
+      padding: 0 2rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .nav-brand { display: flex; align-items: center; gap: 10px; color: var(--accent-text); font-size: 15px; font-weight: 500; }
+    .nav-brand i { font-size: 22px; }
+    .nav-meta { font-size: 12px; color: rgba(250,199,117,0.6); }
+
+    /* MAIN LAYOUT */
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* STATS */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.75rem; }
+    .stat-card {
+      background: var(--bg-primary);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+    }
+    .stat-label { font-size: 11px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 500; color: var(--text-primary); }
+    .stat-card.s-available .stat-value { color: var(--green-text); }
+    .stat-card.s-issued .stat-value { color: var(--amber-text); }
+    .stat-card.s-lost .stat-value { color: var(--red-text); }
+
+    /* PANEL */
+    .panel {
+      background: var(--bg-primary);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      border-bottom: 0.5px solid var(--border);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .panel-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+
+    /* CONTROLS */
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .search-wrap { position: relative; }
+    .search-wrap i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 15px; pointer-events: none; }
+    .search-wrap input { padding-left: 32px; width: 240px; }
+
+    input[type="text"], input[type="number"], select, textarea {
+      background: var(--bg-secondary);
+      border: 0.5px solid var(--border-strong);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-size: 13px;
+      padding: 7px 10px;
+      outline: none;
+      transition: border-color 0.15s;
+      font-family: inherit;
+    }
+    input:focus, select:focus { border-color: #FAC775; box-shadow: 0 0 0 2px rgba(250,199,117,0.2); }
+    input::placeholder { color: var(--text-secondary); }
+
+    .btn-add {
+      background: var(--accent);
+      color: var(--accent-text);
+      border: none;
+      padding: 7px 14px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+    .btn-add:hover { opacity: 0.85; }
+
+    /* TABLE */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    thead { background: var(--bg-secondary); }
+    th {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 0.5px solid var(--border);
+      white-space: nowrap;
+    }
+    td {
+      font-size: 13px;
+      padding: 11px 14px;
+      color: var(--text-primary);
+      border-bottom: 0.5px solid var(--border);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--bg-secondary); }
+    .td-title { font-weight: 500; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .td-author { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); }
+
+    /* BADGES */
+    .badge {
+      display: inline-flex; align-items: center;
+      font-size: 11px; font-weight: 500;
+      padding: 3px 9px; border-radius: 99px;
+    }
+    .badge-available { background: var(--green-bg); color: var(--green-text); }
+    .badge-issued    { background: var(--amber-bg); color: var(--amber-text); }
+    .badge-lost      { background: var(--red-bg);   color: var(--red-text); }
+
+    /* ACTION BTNS */
+    .action-btns { display: flex; gap: 6px; }
+    .btn-icon {
+      width: 30px; height: 30px;
+      border: 0.5px solid var(--border-strong);
+      border-radius: 6px;
+      background: transparent;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-secondary);
+      font-size: 15px;
+      transition: all 0.15s;
+    }
+    .btn-icon:hover { background: var(--bg-secondary); color: var(--text-primary); }
+    .btn-icon.danger:hover { background: var(--red-bg); color: var(--red-text); border-color: #F09595; }
+
+    /* EMPTY */
+    .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-secondary); }
+    .empty-state i { font-size: 48px; display: block; margin-bottom: 12px; opacity: 0.35; }
+    .empty-state p { font-size: 14px; }
+
+    /* MODAL OVERLAY */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none; align-items: center; justify-content: center;
+      z-index: 200; padding: 1rem;
+    }
+    .overlay.open { display: flex; }
+
+    /* MODAL */
+    .modal {
+      background: var(--bg-primary);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      width: 100%; max-width: 500px;
+      padding: 1.5rem;
+      animation: slideUp 0.2s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+    .modal-header h2 { font-size: 16px; font-weight: 500; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-grid .full { grid-column: 1 / -1; }
+    .field label { font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 5px; }
+    .field input, .field select { width: 100%; }
+    .error-msg { font-size: 11px; color: var(--red-text); margin-top: 4px; display: none; }
+
+    .modal-footer {
+      display: flex; gap: 8px; justify-content: flex-end;
+      margin-top: 1.25rem; padding-top: 1.25rem;
+      border-top: 0.5px solid var(--border);
+    }
+    .btn-secondary {
+      background: transparent;
+      border: 0.5px solid var(--border-strong);
+      color: var(--text-primary);
+      padding: 7px 16px; border-radius: var(--radius-md);
+      font-size: 13px; cursor: pointer; font-family: inherit;
+    }
+    .btn-primary {
+      background: var(--accent); color: var(--accent-text);
+      border: none; padding: 7px 16px; border-radius: var(--radius-md);
+      font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+
+    /* TOAST */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--accent); color: var(--accent-text);
+      padding: 10px 16px; border-radius: var(--radius-md);
+      font-size: 13px; font-weight: 500;
+      display: flex; align-items: center; gap: 8px;
+      opacity: 0; transform: translateY(8px);
+      transition: all 0.25s; pointer-events: none; z-index: 300;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* RESPONSIVE */
+    @media (max-width: 640px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .search-wrap input { width: 160px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-grid .full { grid-column: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <i class="ti ti-books"></i>
+      Library Management System
+    </div>
+    <span class="nav-meta">Student ID: 500125280</span>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="container">
+
+    <!-- STATS -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Total books</div>
+        <div class="stat-value" id="stat-total">0</div>
+      </div>
+      <div class="stat-card s-available">
+        <div class="stat-label">Available</div>
+        <div class="stat-value" id="stat-available">0</div>
+      </div>
+      <div class="stat-card s-issued">
+        <div class="stat-label">Issued</div>
+        <div class="stat-value" id="stat-issued">0</div>
+      </div>
+      <div class="stat-card s-lost">
+        <div class="stat-label">Lost</div>
+        <div class="stat-value" id="stat-lost">0</div>
+      </div>
+    </div>
+
+    <!-- PANEL -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Book Records</span>
+        <div class="controls">
+          <div class="search-wrap">
+            <i class="ti ti-search"></i>
+            <input type="text" id="search" placeholder="Search title, author, ISBN..." oninput="renderTable()" />
+          </div>
+          <select id="filter-status" onchange="renderTable()">
+            <option value="">All statuses</option>
+            <option value="Available">Available</option>
+            <option value="Issued">Issued</option>
+            <option value="Lost">Lost</option>
+          </select>
+          <select id="filter-genre" onchange="renderTable()">
+            <option value="">All genres</option>
+            <option value="Fiction">Fiction</option>
+            <option value="Non-Fiction">Non-Fiction</option>
+            <option value="Science">Science</option>
+            <option value="Technology">Technology</option>
+            <option value="History">History</option>
+            <option value="Biography">Biography</option>
+            <option value="Other">Other</option>
+          </select>
+          <button class="btn-add" onclick="openModal()">
+            <i class="ti ti-plus"></i> Add book
+          </button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Title</th>
+              <th>Author</th>
+              <th>Genre</th>
+              <th>Year</th>
+              <th>ISBN</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="book-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+
+  <!-- MODAL OVERLAY -->
+  <div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <h2 id="modal-title">Add new book</h2>
+        <button class="btn-icon" onclick="closeModal()" aria-label="Close"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="form-grid">
+        <div class="field full">
+          <label for="f-title">Book title *</label>
+          <input type="text" id="f-title" placeholder="e.g. The Great Gatsby" maxlength="120" />
+          <div class="error-msg" id="err-title">Title is required.</div>
+        </div>
+        <div class="field full">
+          <label for="f-author">Author *</label>
+          <input type="text" id="f-author" placeholder="e.g. F. Scott Fitzgerald" maxlength="80" />
+          <div class="error-msg" id="err-author">Author is required.</div>
+        </div>
+        <div class="field">
+          <label for="f-genre">Genre</label>
+          <select id="f-genre">
+            <option value="Fiction">Fiction</option>
+            <option value="Non-Fiction">Non-Fiction</option>
+            <option value="Science">Science</option>
+            <option value="Technology">Technology</option>
+            <option value="History">History</option>
+            <option value="Biography">Biography</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-year">Year published</label>
+          <input type="number" id="f-year" placeholder="e.g. 2020" min="1000" max="2026" />
+          <div class="error-msg" id="err-year">Enter a valid year (1000–2026).</div>
+        </div>
+        <div class="field">
+          <label for="f-isbn">ISBN</label>
+          <input type="text" id="f-isbn" placeholder="e.g. 978-0-13-235088-4" maxlength="25" />
+          <div class="error-msg" id="err-isbn">This ISBN already exists.</div>
+        </div>
+        <div class="field">
+          <label for="f-status">Status</label>
+          <select id="f-status">
+            <option value="Available">Available</option>
+            <option value="Issued">Issued</option>
+            <option value="Lost">Lost</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn-primary" id="modal-submit" onclick="submitForm()">Add book</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const DB_KEY = 'lms_books_v1';
+    let editingId = null;
+
+    // ── DATABASE ──────────────────────────────────────────────
+    function loadBooks() {
+      try { return JSON.parse(localStorage.getItem(DB_KEY)) || []; }
+      catch { return []; }
+    }
+
+    function saveBooks(books) {
+      localStorage.setItem(DB_KEY, JSON.stringify(books));
+    }
+
+    function genId() {
+      return 'b_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+    }
+
+    // ── SEED DATA ─────────────────────────────────────────────
+    function seedIfEmpty() {
+      if (loadBooks().length > 0) return;
+      const seed = [
+        { id: genId(), title: 'Clean Code', author: 'Robert C. Martin', genre: 'Technology', year: 2008, isbn: '978-0-13-235088-4', status: 'Available' },
+        { id: genId(), title: 'Sapiens', author: 'Yuval Noah Harari', genre: 'History', year: 2011, isbn: '978-0-06-231609-7', status: 'Issued' },
+        { id: genId(), title: 'The Alchemist', author: 'Paulo Coelho', genre: 'Fiction', year: 1988, isbn: '978-0-06-112241-5', status: 'Available' },
+        { id: genId(), title: 'Thinking, Fast and Slow', author: 'Daniel Kahneman', genre: 'Non-Fiction', year: 2011, isbn: '978-0-374-27563-1', status: 'Available' },
+        { id: genId(), title: 'A Brief History of Time', author: 'Stephen Hawking', genre: 'Science', year: 1988, isbn: '978-0-553-38016-3', status: 'Lost' },
+        { id: genId(), title: 'The Pragmatic Programmer', author: 'Andrew Hunt', genre: 'Technology', year: 1999, isbn: '978-0-20-161622-4', status: 'Available' },
+        { id: genId(), title: 'Steve Jobs', author: 'Walter Isaacson', genre: 'Biography', year: 2011, isbn: '978-1-45-168420-0', status: 'Issued' },
+      ];
+      saveBooks(seed);
+    }
+
+    // ── STATS ─────────────────────────────────────────────────
+    function updateStats() {
+      const books = loadBooks();
+      document.getElementById('stat-total').textContent     = books.length;
+      document.getElementById('stat-available').textContent = books.filter(b => b.status === 'Available').length;
+      document.getElementById('stat-issued').textContent    = books.filter(b => b.status === 'Issued').length;
+      document.getElementById('stat-lost').textContent      = books.filter(b => b.status === 'Lost').length;
+    }
+
+    // ── RENDER TABLE (READ) ───────────────────────────────────
+    function renderTable() {
+      const books  = loadBooks();
+      const q      = document.getElementById('search').value.toLowerCase();
+      const fStat  = document.getElementById('filter-status').value;
+      const fGenre = document.getElementById('filter-genre').value;
+
+      const filtered = books.filter(b => {
+        const matchQ = !q || b.title.toLowerCase().includes(q)
+                          || b.author.toLowerCase().includes(q)
+                          || (b.isbn && b.isbn.toLowerCase().includes(q));
+        const matchS = !fStat  || b.status === fStat;
+        const matchG = !fGenre || b.genre  === fGenre;
+        return matchQ && matchS && matchG;
+      });
+
+      const tbody = document.getElementById('book-table');
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr><td colspan="8">
+            <div class="empty-state">
+              <i class="ti ti-books"></i>
+              <p>${books.length === 0 ? 'No books yet — add your first book!' : 'No books match your search or filters.'}</p>
+            </div>
+          </td></tr>`;
+      } else {
+        tbody.innerHTML = filtered.map((b, i) => `
+          <tr>
+            <td style="color:var(--text-secondary);font-size:12px;">${i + 1}</td>
+            <td class="td-title" title="${esc(b.title)}">${esc(b.title)}</td>
+            <td class="td-author" title="${esc(b.author)}">${esc(b.author)}</td>
+            <td style="font-size:12px;color:var(--text-secondary);">${esc(b.genre)}</td>
+            <td style="font-size:12px;color:var(--text-secondary);">${b.year || '—'}</td>
+            <td style="font-size:12px;color:var(--text-secondary);">${esc(b.isbn) || '—'}</td>
+            <td><span class="badge badge-${b.status.toLowerCase()}">${b.status}</span></td>
+            <td>
+              <div class="action-btns">
+                <button class="btn-icon" onclick="openModal('${b.id}')" title="Edit book" aria-label="Edit ${esc(b.title)}">
+                  <i class="ti ti-edit"></i>
+                </button>
+                <button class="btn-icon danger" onclick="deleteBook('${b.id}')" title="Delete book" aria-label="Delete ${esc(b.title)}">
+                  <i class="ti ti-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>`).join('');
+      }
+      updateStats();
+    }
+
+    // ── ESCAPE HTML ───────────────────────────────────────────
+    function esc(str) {
+      if (!str) return '';
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── MODAL OPEN ────────────────────────────────────────────
+    function openModal(id) {
+      editingId = id || null;
+      clearErrors();
+
+      if (id) {
+        const book = loadBooks().find(b => b.id === id);
+        if (!book) return;
+        document.getElementById('modal-title').textContent  = 'Edit book';
+        document.getElementById('modal-submit').textContent = 'Save changes';
+        document.getElementById('f-title').value  = book.title;
+        document.getElementById('f-author').value = book.author;
+        document.getElementById('f-genre').value  = book.genre;
+        document.getElementById('f-year').value   = book.year || '';
+        document.getElementById('f-isbn').value   = book.isbn || '';
+        document.getElementById('f-status').value = book.status;
+      } else {
+        document.getElementById('modal-title').textContent  = 'Add new book';
+        document.getElementById('modal-submit').textContent = 'Add book';
+        document.getElementById('f-title').value  = '';
+        document.getElementById('f-author').value = '';
+        document.getElementById('f-genre').value  = 'Fiction';
+        document.getElementById('f-year').value   = '';
+        document.getElementById('f-isbn').value   = '';
+        document.getElementById('f-status').value = 'Available';
+      }
+
+      document.getElementById('overlay').classList.add('open');
+      setTimeout(() => document.getElementById('f-title').focus(), 50);
+    }
+
+    // ── MODAL CLOSE ───────────────────────────────────────────
+    function closeModal() {
+      document.getElementById('overlay').classList.remove('open');
+      editingId = null;
+      clearErrors();
+    }
+
+    function handleOverlayClick(e) {
+      if (e.target === document.getElementById('overlay')) closeModal();
+    }
+
+    // ── VALIDATION ────────────────────────────────────────────
+    function clearErrors() {
+      document.querySelectorAll('.error-msg').forEach(el => el.style.display = 'none');
+    }
+
+    function showError(id) {
+      document.getElementById(id).style.display = 'block';
+    }
+
+    function validate(title, author, year, isbn) {
+      let valid = true;
+      clearErrors();
+      if (!title.trim())  { showError('err-title');  valid = false; }
+      if (!author.trim()) { showError('err-author'); valid = false; }
+      if (year && (isNaN(year) || year < 1000 || year > 2026)) {
+        showError('err-year'); valid = false;
+      }
+      if (isbn.trim()) {
+        const dup = loadBooks().find(b => b.isbn && b.isbn.trim() === isbn.trim() && b.id !== editingId);
+        if (dup) { showError('err-isbn'); valid = false; }
+      }
+      return valid;
+    }
+
+    // ── CREATE / UPDATE ───────────────────────────────────────
+    function submitForm() {
+      const title  = document.getElementById('f-title').value;
+      const author = document.getElementById('f-author').value;
+      const genre  = document.getElementById('f-genre').value;
+      const year   = parseInt(document.getElementById('f-year').value) || null;
+      const isbn   = document.getElementById('f-isbn').value;
+      const status = document.getElementById('f-status').value;
+
+      if (!validate(title, author, year, isbn)) return;
+
+      let books = loadBooks();
+
+      if (editingId) {
+        // UPDATE
+        books = books.map(b =>
+          b.id === editingId
+            ? { ...b, title: title.trim(), author: author.trim(), genre, year, isbn: isbn.trim(), status }
+            : b
+        );
+        showToast('ti-check', 'Book updated successfully');
+      } else {
+        // CREATE
+        books.push({ id: genId(), title: title.trim(), author: author.trim(), genre, year, isbn: isbn.trim(), status });
+        showToast('ti-check', 'Book added to library');
+      }
+
+      saveBooks(books);
+      renderTable();
+      closeModal();
+    }
+
+    // ── DELETE ────────────────────────────────────────────────
+    function deleteBook(id) {
+      const book = loadBooks().find(b => b.id === id);
+      if (!book) return;
+      if (!confirm(`Delete "${book.title}"?\n\nThis action cannot be undone.`)) return;
+      saveBooks(loadBooks().filter(b => b.id !== id));
+      renderTable();
+      showToast('ti-trash', 'Book deleted');
+    }
+
+    // ── TOAST ─────────────────────────────────────────────────
+    function showToast(icon, msg) {
+      const t = document.getElementById('toast');
+      t.innerHTML = `<i class="ti ${icon}"></i> ${msg}`;
+      t.classList.add('show');
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    // ── KEYBOARD: ESC closes modal ────────────────────────────
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    // ── INIT ──────────────────────────────────────────────────
+    seedIfEmpty();
+    renderTable();
+  </script>
+</body>
+</html>
